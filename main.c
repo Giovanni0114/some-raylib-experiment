@@ -1,75 +1,112 @@
-#define RAYGUI_IMPLEMENTATION
-
-#include <assert.h>
+#include <raylib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-#include "raygui.h"
-#include "raylib.h"
+#include "rlgl.h"
 
-int WIDTH = 950, HEIGHT =550;
-int buttonsNumber = 0;
+typedef struct {
+    Rectangle structure;
+    Color color;
+} Building;
 
-void makeGrid() {
-    assert(IsWindowReady());
-    // printf("makeGrid start\n");
+void makeMove(Rectangle *player, float delta) { player->x += delta; }
 
-    for (int i = 1; i < WIDTH * 2 / 100; i++) {
-        DrawLineV((Vector2){50.0f * i, 0.0f}, (Vector2){50.0f * i, HEIGHT}, RAYWHITE);
+void syncCamera(Rectangle *player, Camera2D *camera) { camera->target = (Vector2){player->x + 20, player->y + 20}; }
+
+void drawBackground() {
+    ClearBackground(RAYWHITE);
+    rlPushMatrix();
+    {
+        rlTranslatef(0, 200 * 50, 0);
+        rlRotatef(90, 1, 0, 0);
+        DrawGrid(1000*8, 10);
     }
-    for (int i = 1; i < HEIGHT * 2 / 100; i++) {
-        DrawLineV((Vector2){0.0f, 50.0f * i}, (Vector2){WIDTH, 50.0f * i}, RAYWHITE);
-    }
+    rlPopMatrix();
 }
 
-void makeMenu(){
-    if (GuiButton((Rectangle){49, 49, 101, 51}, "Add")) {
-        buttonsNumber++;
-    }
-    if (GuiButton((Rectangle){199, 49, 101, 51}, "Subtract")) {
-        if (buttonsNumber != 0) buttonsNumber--;
-    }
-    if (GuiButton((Rectangle){549, 49, 51, 51}, "+ H")) {
-        HEIGHT += 50;
-    }
-    if (GuiButton((Rectangle){699, 49, 51, 51}, "- H")) {
-        HEIGHT -= 50;
-    }
-    GuiSetStyle(DEFAULT, TEXT_SIZE, 20);
-    char str[3];
-    sprintf(str, "%d", buttonsNumber);
-    DrawText(str, 349 + 25 - strlen(str)*8, 49+10, 30, RAYWHITE);
-}
+int main(int argc, char *argv[]) {
+    const float WIDTH = 800;
+    const float HEIGHT = 450;
+    int NUM_BUILDINGS = 0;
+    float SPEED = 5;
 
-void drawSquares(int number) {
-    int rows = number / 9;
-    int j;
-    for (j = 0; j < rows; j++) {
-        for (int i = 0; i < 9; i++) {
-            DrawRectangleRec((Rectangle){49 + (i * 100), 149 + (j * 100), 50, 50}, RAYWHITE);
-        }
-    }
-    for (int i = 0; i < number - (rows * 9); i++) {  // last row
-        DrawRectangleRec((Rectangle){49 + (i * 100), 149 + (j * 100), 50, 50}, RAYWHITE);
-    }
-}
+    InitWindow((int)WIDTH, (int)HEIGHT, "o ja pierdolę!");
+    SetExitKey(KEY_Q);
+    SetTargetFPS(60);
 
-int main() {
+    Rectangle player = {400, 280, 40, 40};
+    Rectangle floor = {-6000, 320, 12000, 1000};
+    Building *buildings = malloc(240 * sizeof(Building));
 
-        InitWindow(WIDTH, HEIGHT, "Test test");
-        SetTargetFPS(60);
-    // makeGrid();
+    float spacing = 0;
+
+    while (spacing < 12000.0) {
+        Rectangle this;
+        this.width = (float)GetRandomValue(50, 100);
+        this.height = (float)GetRandomValue(100, 800);
+        this.y = HEIGHT - 130.0 - this.height;
+        this.x = -6000.0 + spacing;
+
+        spacing += this.width;
+
+        buildings[NUM_BUILDINGS++] = (Building){
+            this, (Color){GetRandomValue(200, 240), GetRandomValue(200, 240), GetRandomValue(200, 250), 255}};
+    }
+    --NUM_BUILDINGS;
+    if (buildings[NUM_BUILDINGS].structure.x + buildings[NUM_BUILDINGS].structure.width > 6000) {
+        buildings[NUM_BUILDINGS].structure.width = 6000.0 - buildings[NUM_BUILDINGS].structure.x;
+    }
+    // printf("%f %f\n", buildings[NUM_BUILDINGS].structure.x, buildings[NUM_BUILDINGS].structure.width);
+    // printf("%f %f\n", buildings[6].structure.height, buildings[6].structure.width);
+    // printf("%f %f\n", buildings[8].structure.height, buildings[8].structure.width);
+    // printf("%f %f\n", buildings[10].structure.height, buildings[10].structure.width);
+
+    Camera2D camera = {};
+    camera.target = (Vector2){player.x + 20, player.y + 20};
+    camera.offset = (Vector2){(float)WIDTH / 2, (float)HEIGHT / 2};
+    camera.rotation = 0;
+    camera.zoom = 0.40;
+
     while (!WindowShouldClose()) {
-        BeginDrawing();
-        ClearBackground(DARKPURPLE);
-        DrawFPS(0, 0);
-        makeGrid();
-        makeMenu();
-        drawSquares(buttonsNumber);
+        // Player move
+        if (IsKeyDown(KEY_RIGHT)) {
+            makeMove(&player, SPEED);
+        }
+        if (IsKeyDown(KEY_LEFT)) {
+            makeMove(&player, -SPEED);
+        }
+        // Player move
+        if (IsKeyDown(KEY_UP)) {
+            camera.zoom *= 1.05;
+        }
+        if (IsKeyDown(KEY_DOWN)) {
+            camera.zoom /= 1.05;
+        }
 
+        SPEED = IsKeyDown(KEY_SPACE) ? 25 : 5;
+
+        if (player.x > 6020 || player.x < -6000) {
+            player.y += 10;
+        } else if (player.y > 280) {
+            player.y -= 10;
+        } else {
+            player.y = 280;
+        }
+
+        syncCamera(&player, &camera);
+        // Drawing
+        BeginDrawing();
+        BeginMode2D(camera);
+        drawBackground();
+        // Draw
+        for (int i = 0; i <= NUM_BUILDINGS; i++) {
+            DrawRectangleRec(buildings[i].structure, buildings[i].color);
+        }
+        DrawRectangleRec(floor, DARKGRAY);
+        DrawRectangleRec(player, RED);
+        EndMode2D();
         EndDrawing();
     }
 
-    CloseWindow();
-
-    return 0;
+    return EXIT_SUCCESS;
 }
