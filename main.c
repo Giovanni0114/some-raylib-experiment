@@ -8,12 +8,16 @@
 
 const float WIDTH = 800;
 const float HEIGHT = 450;
+const float FLOOR_LEVEL = 280.0;
+
+const float ZOOM_DOWN_CAP = 0.1;
+const float ZOOM_UP_CAP = 5;
 
 int NUM_BUILDINGS = -1;
 int points = 0;
 
 float SPEED = 5;
-float spacing = 0;
+float building_offset = 0;
 
 Camera2D camera = {};
 Rectangle playerModel = {};
@@ -46,6 +50,14 @@ void showScore(int point) {
     DrawText(score, 20, 20, 20, GREEN);
 }
 
+void showStats(float *stats, int len){
+    char buffer[15];
+    for (int i = 0; i < len; i++){
+        sprintf(buffer, "%f", stats[i]);
+        DrawText(buffer, 20, HEIGHT - 20 * (i+1), 20, RED);
+    }
+}
+
 void _preDrawing() {
     SPEED = IsKeyDown(KEY_SPACE) ? 25 : 5;
 
@@ -58,10 +70,14 @@ void _preDrawing() {
     }
     // Player move
     if (IsKeyDown(KEY_UP)) {
-        camera.zoom *= 1.05;
+        if (camera.zoom <= ZOOM_UP_CAP) {
+            camera.zoom *= 1.05;
+        }
     }
     if (IsKeyDown(KEY_DOWN)) {
-        camera.zoom /= 1.05;
+        if (camera.zoom >= ZOOM_DOWN_CAP) {
+            camera.zoom /= 1.05;
+        }
     }
 
     if (IsKeyDown(KEY_A)) {
@@ -75,21 +91,22 @@ void _preDrawing() {
             }
         }
     }
-
-    playerModel.y = 280;  // floor level
-
     // Set speed
     if (playerModel.x > 6020 || playerModel.x < -6000) {
         playerModel.y += 10;
-    } else if (playerModel.y > 280) {
+    } else if (playerModel.y > FLOOR_LEVEL) {
         playerModel.y -= 10;
+    } else if (playerModel.y != FLOOR_LEVEL) {
+        playerModel.y = FLOOR_LEVEL;  // floor level
     }
     syncCamera(&playerModel, &camera);
 }
 
 void _postDrawing() {}
 void _pre2DMode() {}
-void _post2DMode() { showScore(points); }
+void _post2DMode() { 
+    showScore(points); 
+}
 
 void _mainEventLoop() {
     drawBackground();
@@ -101,21 +118,21 @@ void _mainEventLoop() {
 }
 
 int main(int argc, char *argv[]) {
-    playerModel = (Rectangle){400, 280, 40, 40};
+    playerModel = (Rectangle){400, FLOOR_LEVEL, 40, 40};
     floorModel = (Rectangle){-6000, 320, 12000, 1000};
 
     InitWindow((int)WIDTH, (int)HEIGHT, "o ja pierdolę!");
     SetExitKey(KEY_Q);
     SetTargetFPS(60);
 
-    while (spacing < 12000.0) {
+    while (building_offset < 12000.0) {
         Rectangle this;
         this.width = (float)GetRandomValue(50, 100);
         this.height = (float)GetRandomValue(100, 800);
         this.y = HEIGHT - 130.0 - this.height;
-        this.x = -6000.0 + spacing;
+        this.x = -6000.0 + building_offset;
 
-        spacing += this.width;
+        building_offset += this.width;
 
         buildings[++NUM_BUILDINGS] = (Building){
             this, (Color){GetRandomValue(200, 240), GetRandomValue(200, 240), GetRandomValue(200, 250), 255}};
@@ -142,6 +159,8 @@ int main(int argc, char *argv[]) {
     }
 
     while (!WindowShouldClose()) {
+        float stats[] = {camera.zoom};
+
         _preDrawing();
         BeginDrawing();
         _pre2DMode();
@@ -149,6 +168,7 @@ int main(int argc, char *argv[]) {
         _mainEventLoop();
         EndMode2D();
         _post2DMode();
+        showStats(stats, 1);
         EndDrawing();
         _postDrawing();
     }
