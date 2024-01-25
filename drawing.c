@@ -11,6 +11,8 @@ Color getColorForGameMode(const GameMode mode){
             return RAYWHITE;
         case MODE_MENU:
             return LIGHTGRAY;
+        case MODE_END:
+            return BEIGE;
         case Undefined:
         default:
             assert(false);
@@ -48,3 +50,8 @@ void showStats(float *stats, int len){
         DrawText(buffer, 20, HEIGHT - 20 * (i+1), 20, RED);
     }
 }
+
+void showEndScreen(){
+    assert(0 && "Not implemented");
+} 
+

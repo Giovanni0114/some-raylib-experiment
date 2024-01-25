@@ -21,23 +21,27 @@ Color currentBackground = RAYWHITE;
 GameMode gameMode = MODE_GAME;
 
 void _preDrawing() {
-    if (gameMode == MODE_GAME){
+    if (gameMode == MODE_GAME) {
         detectPlayerMovement(&playerModel, &camera);
 
         if (IsKeyDown(KEY_A)) {
             for (int i = 0; i < 15; i++) {
-                if (checkIfCorrupted(corruptedBuildings[i], &playerModel)) {
-                    corruptedBuildings[i]->color = GREEN;
-                    corruptedBuildings[i] = NULL;
-                    points++;
-                    break;
+                if (!checkIfCorrupted(corruptedBuildings[i], &playerModel)) {
+                    continue;
                 }
+
+                corruptedBuildings[i]->color = GREEN;
+                corruptedBuildings[i] = NULL;
+                if (++points == GOAL) { 
+                    gameMode = MODE_END;
+                }
+                break;
             }
         }
     }
-    
-    if (IsKeyPressed(KEY_CAPS_LOCK)){
-        if (gameMode == MODE_GAME){
+
+    if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_CAPS_LOCK)) {
+        if (gameMode == MODE_GAME) {
             gameMode = MODE_MENU;
         } else {
             gameMode = MODE_GAME;
@@ -57,7 +61,7 @@ void _preDrawing() {
 void _postDrawing() {}
 void _pre2DMode() {}
 
-void _post2DMode() { 
+void _post2DMode() {
     switch (gameMode) {
         case Undefined:
             assert(false);
@@ -67,6 +71,10 @@ void _post2DMode() {
             break;
 
         case MODE_MENU:
+            showMenu();
+            break;
+
+        case MODE_END:
             showMenu();
             break;
     }
@@ -87,11 +95,12 @@ void _mainEventLoop() {
             break;
 
         case MODE_MENU:
+        case MODE_END:
             break;
     }
 }
 
-int main(int argc, char *argv[]) {
+int main() {
     playerModel = (Rectangle){400, FLOOR_LEVEL, 40, 40};
     floorModel = (Rectangle){-6000, 320, 12000, 5000};
 
@@ -101,7 +110,6 @@ int main(int argc, char *argv[]) {
     SetExitKey(KEY_Q);
     SetTargetFPS(60);
 
-    
     while (building_offset < 12000.0) {
         Rectangle this;
         this.width = (float)GetRandomValue(50, 100);

@@ -18,7 +18,8 @@ typedef struct {
 typedef enum {
     Undefined = -1,
     MODE_GAME = 0,
-    MODE_MENU = 1
+    MODE_MENU = 1,
+    MODE_END = 2
 } GameMode;
 
 #endif
