@@ -3,20 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "rlgl.h"
-#include "types.h"
-
-const float WIDTH = 800;
-const float HEIGHT = 450;
-const float FLOOR_LEVEL = 280.0;
-
-const float ZOOM_DOWN_CAP = 0.1;
-const float ZOOM_UP_CAP = 5;
+#include "drawing.c"
+#include "game.c"
+#include "menu.c"
+#include "music.c"
 
 int NUM_BUILDINGS = -1;
 int points = 0;
-
-float SPEED = 5;
 float building_offset = 0;
 
 Camera2D camera = {};
@@ -24,74 +17,33 @@ Rectangle playerModel = {};
 Rectangle floorModel = {};
 Building buildings[240];
 Building *corruptedBuildings[15];
-
-void makeMove(Rectangle *player, float delta) { player->x += delta; }
-
-void syncCamera(Rectangle *player, Camera2D *camera) { camera->target = (Vector2){player->x + 20, player->y + 20}; }
-
-void drawBackground() {
-    ClearBackground(RAYWHITE);
-    rlPushMatrix();
-    {  // In matrix pushed
-        rlTranslatef(0, 200 * 50, 0);
-        rlRotatef(90, 1, 0, 0);
-        DrawGrid(1000 * 8, 10);
-    }
-    rlPopMatrix();
-}
-
-bool checkIfCorrupted(Building *building) {
-    return building != NULL && building->structure.x < playerModel.x + 20
-           && building->structure.x + building->structure.width > playerModel.x + 20;
-}
-void showScore(int point) {
-    char score[15];
-    sprintf(score, "Points: %d", point);
-    DrawText(score, 20, 20, 20, GREEN);
-}
-
-void showStats(float *stats, int len){
-    char buffer[15];
-    for (int i = 0; i < len; i++){
-        sprintf(buffer, "%f", stats[i]);
-        DrawText(buffer, 20, HEIGHT - 20 * (i+1), 20, RED);
-    }
-}
+Color currentBackground = RAYWHITE;
+GameMode gameMode = MODE_GAME;
 
 void _preDrawing() {
-    SPEED = IsKeyDown(KEY_SPACE) ? 25 : 5;
+    if (gameMode == MODE_GAME){
+        detectPlayerMovement(&playerModel, &camera);
 
-    // Player move
-    if (IsKeyDown(KEY_RIGHT)) {
-        makeMove(&playerModel, SPEED);
-    }
-    if (IsKeyDown(KEY_LEFT)) {
-        makeMove(&playerModel, -SPEED);
-    }
-    // Player move
-    if (IsKeyDown(KEY_UP)) {
-        if (camera.zoom <= ZOOM_UP_CAP) {
-            camera.zoom *= 1.05;
-        }
-    }
-    if (IsKeyDown(KEY_DOWN)) {
-        if (camera.zoom >= ZOOM_DOWN_CAP) {
-            camera.zoom /= 1.05;
-        }
-    }
-
-    if (IsKeyDown(KEY_A)) {
-        int i = 0, target = -1;
-        for (; i < 15; i++) {
-            if (checkIfCorrupted(corruptedBuildings[i])) {
-                corruptedBuildings[i]->color = GREEN;
-                corruptedBuildings[i] = NULL;
-                points++;
-                break;
+        if (IsKeyDown(KEY_A)) {
+            for (int i = 0; i < 15; i++) {
+                if (checkIfCorrupted(corruptedBuildings[i], &playerModel)) {
+                    corruptedBuildings[i]->color = GREEN;
+                    corruptedBuildings[i] = NULL;
+                    points++;
+                    break;
+                }
             }
         }
     }
-    // Set speed
+    
+    if (IsKeyPressed(KEY_CAPS_LOCK)){
+        if (gameMode == MODE_GAME){
+            gameMode = MODE_MENU;
+        } else {
+            gameMode = MODE_GAME;
+        }
+    }
+
     if (playerModel.x > 6020 || playerModel.x < -6000) {
         playerModel.y += 10;
     } else if (playerModel.y > FLOOR_LEVEL) {
@@ -104,27 +56,52 @@ void _preDrawing() {
 
 void _postDrawing() {}
 void _pre2DMode() {}
+
 void _post2DMode() { 
-    showScore(points); 
+    switch (gameMode) {
+        case Undefined:
+            assert(false);
+
+        case MODE_GAME:
+            showScore(points);
+            break;
+
+        case MODE_MENU:
+            showMenu();
+            break;
+    }
 }
 
 void _mainEventLoop() {
-    drawBackground();
-    for (int i = 0; i <= NUM_BUILDINGS; i++) {
-        DrawRectangleRec(buildings[i].structure, buildings[i].color);
+    drawBackground(gameMode);
+    switch (gameMode) {
+        case Undefined:
+            assert(false);
+
+        case MODE_GAME:
+            for (int i = 0; i <= NUM_BUILDINGS; i++) {
+                DrawRectangleRec(buildings[i].structure, buildings[i].color);
+            }
+            DrawRectangleRec(floorModel, DARKGRAY);
+            DrawRectangleRec(playerModel, RED);
+            break;
+
+        case MODE_MENU:
+            break;
     }
-    DrawRectangleRec(floorModel, DARKGRAY);
-    DrawRectangleRec(playerModel, RED);
 }
 
 int main(int argc, char *argv[]) {
     playerModel = (Rectangle){400, FLOOR_LEVEL, 40, 40};
-    floorModel = (Rectangle){-6000, 320, 12000, 1000};
+    floorModel = (Rectangle){-6000, 320, 12000, 5000};
 
-    InitWindow((int)WIDTH, (int)HEIGHT, "o ja pierdolę!");
+    InitWindow((int)WIDTH, (int)HEIGHT, "City cleaner");
+    InitAudioDevice();
+    initMusic();
     SetExitKey(KEY_Q);
     SetTargetFPS(60);
 
+    
     while (building_offset < 12000.0) {
         Rectangle this;
         this.width = (float)GetRandomValue(50, 100);
@@ -137,10 +114,12 @@ int main(int argc, char *argv[]) {
         buildings[++NUM_BUILDINGS] = (Building){
             this, (Color){GetRandomValue(200, 240), GetRandomValue(200, 240), GetRandomValue(200, 250), 255}};
     }
+
     assert(NUM_BUILDINGS != -1);
     if (buildings[NUM_BUILDINGS].structure.x + buildings[NUM_BUILDINGS].structure.width > 6000) {
         buildings[NUM_BUILDINGS].structure.width = 6000.0 - buildings[NUM_BUILDINGS].structure.x;
     }
+
     // printf("%f %f\n", buildings[NUM_BUILDINGS].structure.x, buildings[NUM_BUILDINGS].structure.width);
     // printf("%f %f\n", buildings[6].structure.height, buildings[6].structure.width);
     // printf("%f %f\n", buildings[8].structure.height, buildings[8].structure.width);
@@ -157,9 +136,10 @@ int main(int argc, char *argv[]) {
         corruptedBuildings[i] = &buildings[idx];
         corruptedBuildings[i]->color = PURPLE;
     }
-
+    PlayMusicStream(music);
     while (!WindowShouldClose()) {
-        float stats[] = {camera.zoom};
+        UpdateMusicStream(music);
+        float stats[] = {camera.zoom, (float)gameMode};
 
         _preDrawing();
         BeginDrawing();
@@ -168,7 +148,7 @@ int main(int argc, char *argv[]) {
         _mainEventLoop();
         EndMode2D();
         _post2DMode();
-        showStats(stats, 1);
+        showStats(stats, 2);
         EndDrawing();
         _postDrawing();
     }
