@@ -51,7 +51,17 @@ void showStats(float *stats, int len){
     }
 }
 
-void showEndScreen(){
-    assert(0 && "Not implemented");
+void showEndScreen(int _score, float _timeS){
+    char score[5];
+    char time[10];
+
+    sprintf(score, "%d", _score);
+    sprintf(time, "%f", _timeS);
+
+    DrawText(score, 20, 20, 20, GREEN);
+    DrawText(time, 20, 20, 20, GREEN);
+
 } 
+
+
 
