@@ -25,10 +25,11 @@ void drawVolumeMenu(){
 };
 void drawGameSettingsMenu(){};
 void drawCreditsMenu() { 
-    DrawText("Author:", _X(20), _Y(20), 24, BLACK); 
-    DrawText("giovanni", _X(30), _Y(50), 24, BLACK); 
+    DrawText("Author:", _X(20), _Y(20), 28, RED); 
+    DrawText("giovanni", _X(30), _Y(52), 24, BLACK); 
     DrawText("<janko.juroszek@gmail.com>", _X(30), _Y(75), 24, BLACK); 
 };
+
 void exitGame() {
     exit(0);
 }
