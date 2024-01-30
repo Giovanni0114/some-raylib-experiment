@@ -2,6 +2,7 @@
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 #include "drawing.c"
 #include "game.c"
@@ -12,6 +13,8 @@ int NUM_BUILDINGS = -1;
 int points = 0;
 float building_offset = 0;
 
+struct timeval timeStart, timeEnd;
+
 Camera2D camera = {};
 Rectangle playerModel = {};
 Rectangle floorModel = {};
@@ -20,24 +23,36 @@ Building *corruptedBuildings[15];
 Color currentBackground = RAYWHITE;
 GameMode gameMode = MODE_GAME;
 
+float calculateTime(struct timeval start, struct timeval end){
+    float seconds  = end.tv_sec  - start.tv_sec;
+    float useconds = end.tv_usec - start.tv_usec;
+
+     return (seconds + useconds/1000000.0);
+}    
+
 void _preDrawing() {
-    if (gameMode == MODE_GAME){
+    if (gameMode == MODE_GAME) {
         detectPlayerMovement(&playerModel, &camera);
 
         if (IsKeyDown(KEY_A)) {
             for (int i = 0; i < 15; i++) {
-                if (checkIfCorrupted(corruptedBuildings[i], &playerModel)) {
-                    corruptedBuildings[i]->color = GREEN;
-                    corruptedBuildings[i] = NULL;
-                    points++;
-                    break;
+                if (!checkIfCorrupted(corruptedBuildings[i], &playerModel)) {
+                    continue;
                 }
+
+                corruptedBuildings[i]->color = GREEN;
+                corruptedBuildings[i] = NULL;
+                if (++points == GOAL) {
+                    gameMode = MODE_END;
+                    gettimeofday(&timeEnd, NULL);
+                }
+                break;
             }
         }
     }
-    
-    if (IsKeyPressed(KEY_CAPS_LOCK)){
-        if (gameMode == MODE_GAME){
+
+    if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_CAPS_LOCK)) {
+        if (gameMode == MODE_GAME) {
             gameMode = MODE_MENU;
         } else {
             gameMode = MODE_GAME;
@@ -57,7 +72,7 @@ void _preDrawing() {
 void _postDrawing() {}
 void _pre2DMode() {}
 
-void _post2DMode() { 
+void _post2DMode() {
     switch (gameMode) {
         case Undefined:
             assert(false);
@@ -69,7 +84,17 @@ void _post2DMode() {
         case MODE_MENU:
             showMenu();
             break;
+
+        case MODE_END:
+            showEndScreen(points, calculateTime(timeStart, timeEnd));
+            break;
     }
+
+#ifdef DEBUG_LINES
+    DrawLine(WIDTH / 2, HEIGHT, WIDTH / 2, 0, RED);
+    DrawLine(0, HEIGHT/2, WIDTH, HEIGHT/2, RED);
+#endif 
+
 }
 
 void _mainEventLoop() {
@@ -85,13 +110,12 @@ void _mainEventLoop() {
             DrawRectangleRec(floorModel, DARKGRAY);
             DrawRectangleRec(playerModel, RED);
             break;
-
-        case MODE_MENU:
+        default:
             break;
     }
 }
 
-int main(int argc, char *argv[]) {
+int main() {
     playerModel = (Rectangle){400, FLOOR_LEVEL, 40, 40};
     floorModel = (Rectangle){-6000, 320, 12000, 5000};
 
@@ -101,7 +125,6 @@ int main(int argc, char *argv[]) {
     SetExitKey(KEY_Q);
     SetTargetFPS(60);
 
-    
     while (building_offset < 12000.0) {
         Rectangle this;
         this.width = (float)GetRandomValue(50, 100);
@@ -137,9 +160,13 @@ int main(int argc, char *argv[]) {
         corruptedBuildings[i]->color = PURPLE;
     }
     PlayMusicStream(music);
+    gettimeofday(&timeStart, NULL);
     while (!WindowShouldClose()) {
         UpdateMusicStream(music);
-        float stats[] = {camera.zoom, (float)gameMode};
+        struct timeval curTime;
+        gettimeofday(&curTime, NULL);
+
+        double stats[] = {camera.zoom, (float)gameMode, curTime.tv_sec, curTime.tv_usec/1000000.0, calculateTime(timeStart, curTime)};
 
         _preDrawing();
         BeginDrawing();
@@ -148,7 +175,7 @@ int main(int argc, char *argv[]) {
         _mainEventLoop();
         EndMode2D();
         _post2DMode();
-        showStats(stats, 2);
+        showStats(stats, 0);
         EndDrawing();
         _postDrawing();
     }
