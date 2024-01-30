@@ -2,6 +2,7 @@
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 #include "drawing.c"
 #include "game.c"
@@ -12,6 +13,8 @@ int NUM_BUILDINGS = -1;
 int points = 0;
 float building_offset = 0;
 
+struct timeval timeStart, timeEnd;
+
 Camera2D camera = {};
 Rectangle playerModel = {};
 Rectangle floorModel = {};
@@ -19,6 +22,13 @@ Building buildings[240];
 Building *corruptedBuildings[15];
 Color currentBackground = RAYWHITE;
 GameMode gameMode = MODE_GAME;
+
+float calculateTime(struct timeval start, struct timeval end){
+    float seconds  = end.tv_sec  - start.tv_sec;
+    float useconds = end.tv_usec - start.tv_usec;
+
+     return (seconds + useconds/1000000.0);
+}    
 
 void _preDrawing() {
     if (gameMode == MODE_GAME) {
@@ -32,8 +42,9 @@ void _preDrawing() {
 
                 corruptedBuildings[i]->color = GREEN;
                 corruptedBuildings[i] = NULL;
-                if (++points == GOAL) { 
+                if (++points == GOAL) {
                     gameMode = MODE_END;
+                    gettimeofday(&timeEnd, NULL);
                 }
                 break;
             }
@@ -75,9 +86,15 @@ void _post2DMode() {
             break;
 
         case MODE_END:
-            showMenu();
+            showEndScreen(points, calculateTime(timeStart, timeEnd));
             break;
     }
+
+#ifdef DEBUG_LINES
+    DrawLine(WIDTH / 2, HEIGHT, WIDTH / 2, 0, RED);
+    DrawLine(0, HEIGHT/2, WIDTH, HEIGHT/2, RED);
+#endif 
+
 }
 
 void _mainEventLoop() {
@@ -93,9 +110,7 @@ void _mainEventLoop() {
             DrawRectangleRec(floorModel, DARKGRAY);
             DrawRectangleRec(playerModel, RED);
             break;
-
-        case MODE_MENU:
-        case MODE_END:
+        default:
             break;
     }
 }
@@ -145,9 +160,13 @@ int main() {
         corruptedBuildings[i]->color = PURPLE;
     }
     PlayMusicStream(music);
+    gettimeofday(&timeStart, NULL);
     while (!WindowShouldClose()) {
         UpdateMusicStream(music);
-        float stats[] = {camera.zoom, (float)gameMode};
+        struct timeval curTime;
+        gettimeofday(&curTime, NULL);
+
+        double stats[] = {camera.zoom, (float)gameMode, curTime.tv_sec, curTime.tv_usec/1000000.0, calculateTime(timeStart, curTime)};
 
         _preDrawing();
         BeginDrawing();
@@ -156,7 +175,7 @@ int main() {
         _mainEventLoop();
         EndMode2D();
         _post2DMode();
-        showStats(stats, 2);
+        showStats(stats, 0);
         EndDrawing();
         _postDrawing();
     }
