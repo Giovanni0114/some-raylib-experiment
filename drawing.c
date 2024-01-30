@@ -52,7 +52,8 @@ bool button(char *text, float poz_x, float poz_y, float width, float height) {
     Rectangle rec = {poz_x, poz_y, width, height};
 
     DrawRectangleRec(rec, isCursorAboveRectangle(rec) ? SKYBLUE : BLUE);
-    DrawTextCenter(text, poz_x, poz_y, (int)(height * 0.9), DARKBLUE);
+    DrawTextCenter(text, poz_x + (width / 2), poz_y + (height / 2), (int)(height * 0.75),
+                   isCursorAboveRectangle(rec) ? BLACK : RAYWHITE);
 
     return isCursorAboveRectangle(rec) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 }

@@ -1,7 +1,7 @@
 #include <raylib.h>
 #include "types.h"
 
-int GOAL = 10;
+int GOAL = 5;
 
 void makeMove(Rectangle *player, float delta) { player->x += delta; }
 void syncCamera(Rectangle *player, Camera2D *camera) { camera->target = (Vector2){player->x + 20, player->y + 20}; }

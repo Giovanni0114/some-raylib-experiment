@@ -1,12 +1,13 @@
 #include <assert.h>
-#include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <drawing.c>
+
 typedef void (*FunctionPointer)(void);
 typedef struct {
-    char name[15];
-    char displayName[30];
+    char *name;
+    char *displayName;
     FunctionPointer function;
 } MenuObject;
 
@@ -16,9 +17,7 @@ typedef struct {
 
 FunctionPointer activeMenuObjectFunction = NULL;
 
-void drawAvatarMenu(){
-    // color picker
-};
+void drawAvatarMenu(){};
 
 void drawVolumeMenu(){
 
@@ -45,7 +44,7 @@ const MenuObject s_menuObjects[] = {
     {"exit", "Exit", exitGame},
 };
 
-const MenuObject* lookupObjects(const char name[15]) {
+const MenuObject *lookupObjects(const char name[15]) {
     for (uint i = 0; i < sizeof(s_menuObjects) / sizeof(MenuObject); i++) {
         if (s_menuObjects[i].name == name) {
             return &(s_menuObjects[i]);
@@ -68,21 +67,16 @@ bool isCursorAboveMenuObject(int idx) {
 
 void showMenu() {
     bool isCursorAboveNoneBlocks = true;
-
     for (uint i = 0; i < sizeof(s_menuObjects) / sizeof(MenuObject); i++) {
-        DrawRectangle(20, 40 + (i * 50), 330, 40, isCursorAboveMenuObject(i) ? SKYBLUE : BLUE);
-        DrawText(s_menuObjects[i].displayName, 30, 45 + (i * 50), 30, RAYWHITE);
-
+        if (button(s_menuObjects[i].displayName, 20, 40 + (i * 50), 330, 40)) {
+            if (activeMenuObjectFunction == NULL || activeMenuObjectFunction != s_menuObjects[i].function) {
+                activeMenuObjectFunction = s_menuObjects[i].function;
+            } else {
+                activeMenuObjectFunction = NULL;
+            }
+        }
         if (isCursorAboveMenuObject(i)) {
             isCursorAboveNoneBlocks = false;
-
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                if (activeMenuObjectFunction == NULL || activeMenuObjectFunction != s_menuObjects[i].function) {
-                    activeMenuObjectFunction = s_menuObjects[i].function;
-                } else {
-                    activeMenuObjectFunction = NULL;
-                }
-            }
         }
     }
 
@@ -99,4 +93,3 @@ void showMenu() {
 
     activeMenuObjectFunction();
 }
-
