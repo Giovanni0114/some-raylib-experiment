@@ -8,6 +8,8 @@
 #include "rlgl.h"
 #include "types.h"
 
+bool resetCursor = true;
+
 typedef enum {
     BSTATE_NONE = 0x0,
     BSTATE_ABOVE = 0x1,
@@ -48,13 +50,17 @@ bool isCursorAboveRectangle(Rectangle rectangle) {
     return ret;
 }
 
-bool button(char *text, float poz_x, float poz_y, float width, float height) {
+bool createButton(char *text, float poz_x, float poz_y, float width, float height) {
     Rectangle rec = {poz_x, poz_y, width, height};
 
     DrawRectangleRec(rec, isCursorAboveRectangle(rec) ? SKYBLUE : BLUE);
     DrawTextCenter(text, poz_x + (width / 2), poz_y + (height / 2), (int)(height * 0.75),
                    isCursorAboveRectangle(rec) ? BLACK : RAYWHITE);
 
+    if (isCursorAboveRectangle(rec)){
+        resetCursor = false;
+        SetMouseCursor(MOUSE_CURSOR_CROSSHAIR);
+    }
     return isCursorAboveRectangle(rec) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 }
 void drawBackground(const GameMode gameMode) {
@@ -91,10 +97,19 @@ void showStats(double *stats, int len) {
 
 void showEndScreen(int _score, float _timeSec) {
     char score[100];
-
     sprintf(score, "Points: %d  Time: %.2f", _score, _timeSec);
 
     DrawText(score, 20, HEIGHT - 50, 32, BROWN);
 
     DrawTextCenter("THE END", WIDTH / 2, HEIGHT / 2, 64, DARKBROWN);
+
+    if (createButton("REMATCH", WIDTH * 3/5, HEIGHT - 100, 220, 46))
+        ;
+}
+
+void tryResetCursor(){
+    if (resetCursor) {
+        SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+    }
+    resetCursor = true;
 }

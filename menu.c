@@ -18,21 +18,15 @@ typedef struct {
 FunctionPointer activeMenuObjectFunction = NULL;
 
 void drawAvatarMenu(){};
-
-void drawVolumeMenu(){
-
-};
+void drawVolumeMenu(){};
 void drawGameSettingsMenu(){};
-void drawCreditsMenu() { 
-    DrawText("Author:", _X(20), _Y(20), 28, RED); 
-    DrawText("giovanni", _X(30), _Y(52), 24, BLACK); 
-    DrawText("<janko.juroszek@gmail.com>", _X(30), _Y(75), 24, BLACK); 
+void drawCreditsMenu() {
+    DrawText("Author:", _X(20), _Y(20), 28, RED);
+    DrawText("giovanni", _X(30), _Y(52), 24, BLACK);
+    DrawText("<janko.juroszek@gmail.com>", _X(30), _Y(75), 24, BLACK);
 };
 
-void exitGame() {
-    exit(0);
-}
-
+void exitGame() { exit(0); }
 
 char activeObject[15] = {};
 
@@ -45,7 +39,7 @@ const MenuObject s_menuObjects[] = {
 };
 
 const MenuObject *lookupObjects(const char name[15]) {
-    for (uint i = 0; i < sizeof(s_menuObjects) / sizeof(MenuObject); i++) {
+    for (unsigned int i = 0; i < sizeof(s_menuObjects) / sizeof(MenuObject); i++) {
         if (s_menuObjects[i].name == name) {
             return &(s_menuObjects[i]);
         }
@@ -61,31 +55,23 @@ bool isCursorAboveMenuObject(int idx) {
     ret &= x < 350;
     ret &= y > 40 + (idx * 50);
     ret &= y < 40 + (idx * 50) + 40;
-    if (ret) SetMouseCursor(MOUSE_CURSOR_CROSSHAIR);
     return ret;
 }
 
+
 void showMenu() {
-    bool isCursorAboveNoneBlocks = true;
     for (uint i = 0; i < sizeof(s_menuObjects) / sizeof(MenuObject); i++) {
-        if (button(s_menuObjects[i].displayName, 20, 40 + (i * 50), 330, 40)) {
+        if (createButton(s_menuObjects[i].displayName, 20, 40 + (i * 50), 330, 40)) {
             if (activeMenuObjectFunction == NULL || activeMenuObjectFunction != s_menuObjects[i].function) {
                 activeMenuObjectFunction = s_menuObjects[i].function;
             } else {
                 activeMenuObjectFunction = NULL;
             }
         }
-        if (isCursorAboveMenuObject(i)) {
-            isCursorAboveNoneBlocks = false;
-        }
     }
 
     DrawLine(370, 20, 370, 430, RED);
     DrawLine(770, 20, 770, 430, RED);
-
-    if (isCursorAboveNoneBlocks) {
-        SetMouseCursor(MOUSE_CURSOR_DEFAULT);
-    }
 
     if (activeMenuObjectFunction == NULL) {
         return;

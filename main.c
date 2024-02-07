@@ -69,7 +69,9 @@ void _preDrawing() {
     syncCamera(&playerModel, &camera);
 }
 
-void _postDrawing() {}
+void _postDrawing() {
+    tryResetCursor();
+}
 void _pre2DMode() {}
 
 void _post2DMode() {
