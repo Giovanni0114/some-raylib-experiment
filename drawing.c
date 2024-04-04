@@ -1,21 +1,10 @@
-#pragma once
+#include "drawing.h"
 
 #include <assert.h>
-#include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "rlgl.h"
-#include "types.h"
-
-bool resetCursor = true;
-
-typedef enum {
-    BSTATE_NONE = 0x0,
-    BSTATE_ABOVE = 0x1,
-    BSTATE_CLICKED = 0x2,
-    BSTATE_FOCUS = 0x4,
-} ButtonState;
+bool resetCursor = false;
 
 Color getColorForGameMode(const GameMode mode) {
     switch (mode) {
@@ -32,19 +21,18 @@ Color getColorForGameMode(const GameMode mode) {
 }
 
 void DrawTextCenter(char *text, int poz_x, int poz_y, int fontSize, Color color) {
-    DrawText(text, poz_x - (int)(MeasureText(text, fontSize) / 2), poz_y - fontSize / 2, fontSize, color);
+    DrawText(text, poz_x - MeasureText(text, fontSize) / 2, poz_y - fontSize / 2, fontSize, color);
 }
 
 bool isCursorAboveRectangle(Rectangle rectangle) {
-    int x = GetMouseX();
-    int y = GetMouseY();
+    Vector2 pos = GetMousePosition();
     bool ret = true;
 
-    ret &= x > rectangle.x;
-    ret &= x < rectangle.x + rectangle.width;
+    ret &= pos.x > rectangle.x;
+    ret &= pos.x < rectangle.x + rectangle.width;
 
-    ret &= y > rectangle.y;
-    ret &= y < rectangle.y + rectangle.height;
+    ret &= pos.y > rectangle.y;
+    ret &= pos.y < rectangle.y + rectangle.height;
 
     if (ret) SetMouseCursor(MOUSE_CURSOR_CROSSHAIR);
     return ret;
@@ -81,30 +69,35 @@ bool checkIfCorrupted(Building *building, Rectangle *playerModel) {
     return building != NULL && building->structure.x < playerModel->x + 20
            && building->structure.x + building->structure.width > playerModel->x + 20;
 }
+
 void showScore(int point) {
-    char score[15];
-    sprintf(score, "Points: %d", point);
+    char *score;
+    asprintf(&score, "Points: %d", point);
     DrawText(score, 20, 20, 20, GREEN);
+    free(score);
 }
 
 void showStats(double *stats, int len) {
-    char buffer[15];
+    char *buffer;
     for (int i = 0; i < len; i++) {
-        sprintf(buffer, "%.4f", stats[i]);
-        DrawText(buffer, 20, HEIGHT - 20 * (i + 1), 20, RED);
+        asprintf(&buffer, "%.4f", stats[i]);
+        DrawText(buffer, 20, (int)HEIGHT - 20 * (i + 1), 20, RED);
+        free(buffer);
     }
 }
 
 void showEndScreen(int _score, float _timeSec) {
-    char score[100];
-    sprintf(score, "Points: %d  Time: %.2f", _score, _timeSec);
+    char *score;
+    asprintf(&score, "Points: %d  Time: %.2f", _score, _timeSec);
 
-    DrawText(score, 20, HEIGHT - 50, 32, BROWN);
+    DrawText(score, 20, (int)HEIGHT - 50, 32, BROWN);
+    free(score);
 
-    DrawTextCenter("THE END", WIDTH / 2, HEIGHT / 2, 64, DARKBROWN);
+    DrawTextCenter("THE END", (int)WIDTH / 2, (int)HEIGHT / 2, 64, DARKBROWN);
 
-    if (createButton("REMATCH", WIDTH * 3/5, HEIGHT - 100, 220, 46))
-        ;
+    if (createButton("REMATCH", WIDTH * 3 / 5, HEIGHT - 100, 220, 46)) {
+        printf("unimplemented");
+    }
 }
 
 void tryResetCursor(){
@@ -113,3 +106,4 @@ void tryResetCursor(){
     }
     resetCursor = true;
 }
+

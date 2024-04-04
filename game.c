@@ -1,3 +1,4 @@
+#include "game.h"
 #include <raylib.h>
 #include "types.h"
 
@@ -23,5 +24,4 @@ void detectPlayerMovement(Rectangle *playerModel, Camera2D *camera){
             camera->zoom /= 1.05;
         }
     }
-
 }

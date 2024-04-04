@@ -1,34 +1,13 @@
-#include <assert.h>
+#include "menu.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <drawing.c>
-
-typedef void (*FunctionPointer)(void);
-typedef struct {
-    char *name;
-    char *displayName;
-    FunctionPointer function;
-} MenuObject;
-
-// MENU ELEMENT START
-#define _X(x) (x + 370)
-#define _Y(y) (y + 20)
+// MENU ELEMENT RELATIVE POSITIONS
+#define MENU_X(x) ((x) + 370)
+#define MENU_Y(y) ((y) + 20)
 
 FunctionPointer activeMenuObjectFunction = NULL;
-
-void drawAvatarMenu(){};
-void drawVolumeMenu(){};
-void drawGameSettingsMenu(){};
-void drawCreditsMenu() {
-    DrawText("Author:", _X(20), _Y(20), 28, RED);
-    DrawText("giovanni", _X(30), _Y(52), 24, BLACK);
-    DrawText("<janko.juroszek@gmail.com>", _X(30), _Y(75), 24, BLACK);
-};
-
-void exitGame() { exit(0); }
-
-char activeObject[15] = {};
 
 const MenuObject s_menuObjects[] = {
     {"avatar", "Avatar appearance", drawAvatarMenu},
@@ -37,6 +16,28 @@ const MenuObject s_menuObjects[] = {
     {"credits", "Credits", drawCreditsMenu},
     {"exit", "Exit", exitGame},
 };
+
+void drawAvatarMenu() {
+    DrawText("drawAvatarMenu()", MENU_X(20), MENU_Y(20), 28, RED);
+};
+
+void drawVolumeMenu() {
+    DrawText("drawVolumeMenu()", MENU_X(20), MENU_Y(20), 28, RED);
+};
+
+void drawGameSettingsMenu() {
+    DrawText("drawGameSettingsMenu()", MENU_X(20), MENU_Y(20), 28, RED);
+};
+
+void drawCreditsMenu() {
+    DrawText("Author:", MENU_X(20), MENU_Y(20), 28, RED);
+    DrawText("giovanni", MENU_X(30), MENU_Y(52), 24, BLACK);
+    DrawText("<janko.juroszek@gmail.com>", MENU_X(30), MENU_Y(75), 24, BLACK);
+};
+
+void exitGame() {
+    exit(0);
+}
 
 const MenuObject *lookupObjects(const char name[15]) {
     for (unsigned int i = 0; i < sizeof(s_menuObjects) / sizeof(MenuObject); i++) {
@@ -57,7 +58,6 @@ bool isCursorAboveMenuObject(int idx) {
     ret &= y < 40 + (idx * 50) + 40;
     return ret;
 }
-
 
 void showMenu() {
     for (uint i = 0; i < sizeof(s_menuObjects) / sizeof(MenuObject); i++) {

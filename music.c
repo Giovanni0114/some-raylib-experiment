@@ -1,7 +1,8 @@
+#include "music.h"
 #include <raylib.h>
 
 Music music = {};
-float musicLevel = 0.05;
+float musicLevel = 0.05F;
 
 void initMusic(){
     music = LoadMusicStream("music/ambient.mp3");

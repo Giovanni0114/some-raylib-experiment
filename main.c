@@ -4,10 +4,10 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-#include "drawing.c"
-#include "game.c"
-#include "menu.c"
-#include "music.c"
+#include "drawing.h"
+#include "game.h"
+#include "menu.h"
+#include "music.h"
 
 int NUM_BUILDINGS = -1;
 int points = 0;
@@ -28,9 +28,9 @@ float calculateTime(struct timeval start, struct timeval end){
     float useconds = end.tv_usec - start.tv_usec;
 
      return (seconds + useconds/1000000.0);
-}    
+}
 
-void _preDrawing() {
+void preDrawing() {
     if (gameMode == MODE_GAME) {
         detectPlayerMovement(&playerModel, &camera);
 
@@ -69,12 +69,12 @@ void _preDrawing() {
     syncCamera(&playerModel, &camera);
 }
 
-void _postDrawing() {
+void postDrawing() {
     tryResetCursor();
 }
-void _pre2DMode() {}
+void pre2DMode() {}
 
-void _post2DMode() {
+void post2DMode() {
     switch (gameMode) {
         case Undefined:
             assert(false);
@@ -99,7 +99,7 @@ void _post2DMode() {
 
 }
 
-void _mainEventLoop() {
+void mainEventLoop() {
     drawBackground(gameMode);
     switch (gameMode) {
         case Undefined:
@@ -118,6 +118,7 @@ void _mainEventLoop() {
 }
 
 int main() {
+    asm("nop");
     playerModel = (Rectangle){400, FLOOR_LEVEL, 40, 40};
     floorModel = (Rectangle){-6000, 320, 12000, 5000};
 
@@ -170,16 +171,16 @@ int main() {
 
         double stats[] = {camera.zoom, (float)gameMode, curTime.tv_sec, curTime.tv_usec/1000000.0, calculateTime(timeStart, curTime)};
 
-        _preDrawing();
+        preDrawing();
         BeginDrawing();
-        _pre2DMode();
+        pre2DMode();
         BeginMode2D(camera);
-        _mainEventLoop();
+        mainEventLoop();
         EndMode2D();
-        _post2DMode();
+        post2DMode();
         showStats(stats, 0);
         EndDrawing();
-        _postDrawing();
+        postDrawing();
     }
 
     return EXIT_SUCCESS;
